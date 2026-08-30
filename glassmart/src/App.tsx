@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { supabase } from "./lib/supabaseClient";
-import glassBackground from './assets/glass-background.jpg'
 import glassProduct from './assets/glass-product.jpg'
 import './App.css'
 
@@ -37,7 +36,8 @@ function App() {
   const [products, setProducts] = useState<any[]>([]);
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [showAddProduct, setShowAddProduct] = useState(false);
-  const [cart, setCart] = useState<any[]>([]);
+  const [cartQuantity, setCartQuantity] = useState(0);
+  const [, setCart] = useState<any[]>([]);
   const [newProduct, setNewProduct] = useState({
     name: "",
     description: "",
@@ -206,7 +206,7 @@ function App() {
       }
     }
   };
-  const [cartQuantity, setCartQuantity] = useState(0);
+  
 
   const cartTotal = cartQuantity * product.price;
 
