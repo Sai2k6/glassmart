@@ -224,7 +224,7 @@ function App() {
 
   return (
     <div className="app">
-      {/* NAVBAR */}
+      {/* ================= NAVBAR ================= */}
       <header className="navbar">
 
         {/* LOGO */}
@@ -242,6 +242,7 @@ function App() {
         {userRole !== "admin" && (
           <button className="delivery-location">
             <span className="location-icon">📍</span>
+
             <span>
               <small>Deliver to</small>
               <strong>Select your location</strong>
@@ -252,6 +253,7 @@ function App() {
         {/* SEARCH */}
         {userRole !== "admin" && (
           <div className="search-container">
+
             <select className="search-category">
               <option>All</option>
             </select>
@@ -265,37 +267,9 @@ function App() {
             <button className="search-button">
               🔍
             </button>
+
           </div>
         )}
-
-        {/* NAVIGATION */}
-        <div className="nav-links">
-
-          {userRole === "admin" ? (
-            <button onClick={() => setPage("admin")}>
-              Dashboard
-            </button>
-          ) : (
-            <>
-              <button onClick={() => setPage("home")}>
-                Home
-              </button>
-
-              <button onClick={() => setPage("products")}>
-                Products
-              </button>
-
-              <button onClick={() => setPage("services")}>
-                Services
-              </button>
-
-              <button onClick={() => setPage("contact")}>
-                Contact
-              </button>
-            </>
-          )}
-
-        </div>
 
         {/* RIGHT SIDE */}
         <div className="nav-right">
@@ -350,6 +324,55 @@ function App() {
         </div>
 
       </header>
+
+
+      {/* ================= SECOND NAVIGATION ROW ================= */}
+      {userRole !== "admin" && (
+        <nav className="main-nav">
+
+          {/* ALL CATEGORIES */}
+          <button
+            className="nav-category"
+            onClick={() => setPage("products")}
+          >
+            ☰ <span>All Categories</span> ▾
+          </button>
+
+          {/* NAVIGATION LINKS */}
+          <div className="nav-menu">
+
+            <button
+              className="nav-button"
+              onClick={() => setPage("home")}
+            >
+              Home
+            </button>
+
+            <button
+              className="nav-button"
+              onClick={() => setPage("products")}
+            >
+              Products
+            </button>
+
+            <button
+              className="nav-button"
+              onClick={() => setPage("services")}
+            >
+              Services
+            </button>
+
+            <button
+              className="nav-button"
+              onClick={() => setPage("contact")}
+            >
+              Contact Us
+            </button>
+
+          </div>
+
+        </nav>
+      )}
 
       {/* HOME */}
       {page === "home" && (
