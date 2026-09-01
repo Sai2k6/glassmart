@@ -226,50 +226,129 @@ function App() {
     <div className="app">
       {/* NAVBAR */}
       <header className="navbar">
-        <div className="logo" onClick={() => setPage(userRole === "admin" ? "admin" : "home")}>
+
+        {/* LOGO */}
+        <div
+          className="logo"
+          onClick={() =>
+            setPage(userRole === "admin" ? "admin" : "home")
+          }
+        >
           <span>GLASS</span>MART
+          <small>Premium Glass Solutions</small>
         </div>
 
-        {userRole === "admin" ? (
-          <button onClick={() => setPage("admin")}>
-            Dashboard
+        {/* DELIVERY LOCATION */}
+        {userRole !== "admin" && (
+          <button className="delivery-location">
+            <span className="location-icon">📍</span>
+            <span>
+              <small>Deliver to</small>
+              <strong>Select your location</strong>
+            </span>
           </button>
-        ) : (
-          <>
-            <button onClick={() => setPage("home")}>Home</button>
-            <button onClick={() => setPage("products")}>Products</button>
-            <button onClick={() => setPage("services")}>Services</button>
-            <button onClick={() => setPage("contact")}>Contact</button>
-          </>
         )}
 
+        {/* SEARCH */}
+        {userRole !== "admin" && (
+          <div className="search-container">
+            <select className="search-category">
+              <option>All</option>
+            </select>
+
+            <input
+              type="text"
+              placeholder="Search Glassmart..."
+              className="search-input"
+            />
+
+            <button className="search-button">
+              🔍
+            </button>
+          </div>
+        )}
+
+        {/* NAVIGATION */}
+        <div className="nav-links">
+
+          {userRole === "admin" ? (
+            <button onClick={() => setPage("admin")}>
+              Dashboard
+            </button>
+          ) : (
+            <>
+              <button onClick={() => setPage("home")}>
+                Home
+              </button>
+
+              <button onClick={() => setPage("products")}>
+                Products
+              </button>
+
+              <button onClick={() => setPage("services")}>
+                Services
+              </button>
+
+              <button onClick={() => setPage("contact")}>
+                Contact
+              </button>
+            </>
+          )}
+
+        </div>
+
+        {/* RIGHT SIDE */}
         <div className="nav-right">
+
+          <button className="language-btn">
+            🇮🇳 EN ▾
+          </button>
+
           {user ? (
             <button
-              className="login-btn"
+              className="account-btn"
               onClick={async () => {
                 await supabase.auth.signOut();
                 setUser(null);
                 setPage("home");
               }}
             >
-              Logout
+              <small>Hello</small>
+              <strong>Account & Lists</strong>
             </button>
           ) : (
-            <button className="login-btn" onClick={() => setPage("login")}>
-              Login
+            <button
+              className="account-btn"
+              onClick={() => setPage("login")}
+            >
+              <small>Hello</small>
+              <strong>Login</strong>
             </button>
           )}
 
+          <button className="orders-btn">
+            <small>Returns</small>
+            <strong>& Orders</strong>
+          </button>
+
           {userRole !== "admin" && (
-            <button className="cart-btn" onClick={() => setPage("cart")}>
-              🛒 Cart
+            <button
+              className="cart-btn"
+              onClick={() => setPage("cart")}
+            >
+              <span className="cart-icon">🛒</span>
+              <strong>Cart</strong>
+
               {cartQuantity > 0 && (
-                <span className="cart-count">{cartQuantity}</span>
+                <span className="cart-count">
+                  {cartQuantity}
+                </span>
               )}
             </button>
           )}
+
         </div>
+
       </header>
 
       {/* HOME */}
