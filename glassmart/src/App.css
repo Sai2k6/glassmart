@@ -1707,3 +1707,56 @@ footer p {
     gap: 15px;
   }
 }
+
+/* ================================
+   GLASSMART SECOND NAVIGATION
+================================ */
+
+.main-nav {
+  width: 100%;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  background: #173b63;
+  color: white;
+  padding: 0 16px;
+}
+
+.nav-category {
+  height: 52px;
+  min-width: 220px;
+  border: none;
+  background: #214b76;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 22px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.nav-category:hover {
+  background: #2c5b88;
+}
+
+.nav-menu {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  margin-left: 10px;
+}
+
+.nav-button {
+  height: 100%;
+  border: none;
+  background: transparent;
+  color: white;
+  padding: 0 24px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.nav-button:hover {
+  background: #214b76;
+}
