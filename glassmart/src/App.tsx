@@ -326,53 +326,53 @@ function App() {
       </header>
 
 
-      {/* ================= SECOND NAVIGATION ROW ================= */}
-      {userRole !== "admin" && (
-        <nav className="main-nav">
+    
 
-          {/* ALL CATEGORIES */}
+      {/* SECOND NAVIGATION */ }
+
+    {userRole !== "admin" && (
+      <nav className="main-nav">
+
+        <button className="nav-category">
+          ☰
+          <span>All Categories</span>
+        </button>
+
+        <div className="nav-menu">
+
           <button
-            className="nav-category"
-            onClick={() => setPage("products")}
+            className={`nav-button ${page === "home" ? "active" : ""}`}
+            onClick={() => setPage("home")}
           >
-            ☰ <span>All Categories</span> ▾
+            Home
           </button>
 
-          {/* NAVIGATION LINKS */}
-          <div className="nav-menu">
+          <button
+            className={`nav-button ${page === "products" ? "active" : ""}`}
+            onClick={() => setPage("products")}
+          >
+            Products
+          </button>
 
-            <button
-              className="nav-button"
-              onClick={() => setPage("home")}
-            >
-              Home
-            </button>
+          <button
+            className={`nav-button ${page === "services" ? "active" : ""}`}
+            onClick={() => setPage("services")}
+          >
+            Services
+          </button>
 
-            <button
-              className="nav-button"
-              onClick={() => setPage("products")}
-            >
-              Products
-            </button>
+          <button
+            className={`nav-button ${page === "contact" ? "active" : ""}`}
+            onClick={() => setPage("contact")}
+          >
+            Contact
+          </button>
 
-            <button
-              className="nav-button"
-              onClick={() => setPage("services")}
-            >
-              Services
-            </button>
+        </div>
 
-            <button
-              className="nav-button"
-              onClick={() => setPage("contact")}
-            >
-              Contact Us
-            </button>
-
-          </div>
-
-        </nav>
-      )}
+      </nav>
+    
+  )}
 
       {/* HOME */}
       {page === "home" && (
@@ -1112,49 +1112,99 @@ function App() {
 
       {/* SERVICES */}
       {page === "services" && (
-        <main className="page-container">
-          <div className="page-title">
-            <p className="eyebrow">OUR SERVICES</p>
-            <h1>Need a Custom Solution?</h1>
-            <p>Tell us what you need and our team will get back to you.</p>
-          </div>
+        <main className="services-page">
 
-          <div className="service-layout">
-            <div className="service-info">
+          {/* SERVICES INTRO */}
+          <section className="services-intro">
+            <p className="services-label">OUR SERVICES</p>
+
+            <h1>Need a Custom Solution?</h1>
+
+            <p className="services-subtitle">
+              Tell us what you need and our team will get back to you.
+            </p>
+          </section>
+
+          {/* QUOTE SECTION */}
+          <section className="quote-section">
+
+            {/* LEFT */}
+            <div className="quote-content">
+              <p className="quote-label">GET IN TOUCH</p>
+
               <h2>Request a Quote</h2>
-              <p>
+
+              <p className="quote-description">
                 Whether you're working on a home, restaurant, office or
                 commercial project, tell us about your requirements.
               </p>
             </div>
 
-            <div className="checkout-form">
-              <label>Name</label>
-              <input placeholder="Your name" />
+            {/* RIGHT - FORM */}
+            <div className="quote-form">
 
-              <label>Phone</label>
-              <input placeholder="Phone number" />
+              <div className="form-row">
 
-              <label>Email</label>
-              <input placeholder="Email address" />
+                <div className="form-field">
+                  <label>Name</label>
+                  <input
+                    type="text"
+                    placeholder="Your name"
+                  />
+                </div>
 
-              <label>Service required</label>
-              <select>
-                <option>Select a service</option>
-                <option>Decorative Glass</option>
-                <option>Glass Partition</option>
-                <option>Custom Glass</option>
-                <option>Installation</option>
-              </select>
+                <div className="form-field">
+                  <label>Phone</label>
+                  <input
+                    type="tel"
+                    placeholder="Phone number"
+                  />
+                </div>
 
-              <label>Requirements</label>
-              <textarea placeholder="Tell us what you need"></textarea>
+              </div>
 
-              <button className="primary-btn full">
+              <div className="form-row">
+
+                <div className="form-field">
+                  <label>Email</label>
+                  <input
+                    type="email"
+                    placeholder="Email address"
+                  />
+                </div>
+
+                <div className="form-field">
+                  <label>Service required</label>
+
+                  <select defaultValue="">
+                    <option value="" disabled>
+                      Select a service
+                    </option>
+                    <option>Decorative Glass</option>
+                    <option>Glass Partition</option>
+                    <option>Custom Glass</option>
+                    <option>Installation</option>
+                  </select>
+                </div>
+
+              </div>
+
+              <div className="form-field">
+                <label>Requirements</label>
+
+                <textarea
+                  placeholder="Tell us what you need"
+                />
+              </div>
+
+              <button className="quote-submit">
                 Submit Enquiry
               </button>
+
             </div>
-          </div>
+
+          </section>
+
         </main>
       )}
 
