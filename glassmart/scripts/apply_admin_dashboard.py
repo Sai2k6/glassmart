@@ -9,13 +9,17 @@ text = app.read_text(encoding="utf-8")
 if 'import AdminDashboard from "./AdminDashboard";' not in text:
     text = text.replace('import "./App.css";', 'import "./App.css";\nimport AdminDashboard from "./AdminDashboard";')
 
-old_admin = '{page === "admin" && <main className="page-container"><div className="admin-dashboard"><h1>Admin Dashboard</h1><div className="admin-grid"><button className="admin-card" onClick={() => navigate("admin-products")}><h2>Products</h2></button><button className="admin-card" onClick={() => navigate("admin-orders")}><h2>Orders</h2></button><button className="admin-card" onClick={() => navigate("admin-enquiries")}><h2>Enquiries</h2></button><button className="admin-card" onClick={() => navigate("admin-hardware")}><h2>Hardware</h2></button></div></div></main>}'
+# Replace the existing admin route block without depending on its exact card markup.
 new_admin = '{userRole === "admin" && page.startsWith("admin") && <AdminDashboard navigate={navigate} onLogout={logout} />}'
-if old_admin in text:
-    text = text.replace(old_admin, new_admin)
-else:
-    if new_admin not in text:
-        raise SystemExit("Existing admin dashboard block not found; refusing to make a risky edit")
+admin_start = text.find('{page === "admin" &&')
+toast_marker = '\n    {toast &&'
+if admin_start != -1:
+    toast_start = text.find(toast_marker, admin_start)
+    if toast_start == -1:
+        raise SystemExit("Could not locate toast marker after admin route")
+    text = text[:admin_start] + new_admin + text[toast_start:]
+elif new_admin not in text:
+    raise SystemExit("Could not locate an admin route to replace")
 
 # Admin can be selected in the registration UI, but a public signup must never self-assign admin privileges.
 text = text.replace(
@@ -50,4 +54,3 @@ styles = r'''
 existing = css.read_text(encoding="utf-8")
 if "/* Admin control centre */" not in existing:
     css.write_text(existing + styles, encoding="utf-8")
-'''
