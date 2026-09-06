@@ -22,67 +22,115 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: glassmart/package-lock.json
-      - name: Apply hardware option selection fix
-        if: github.event_name == 'push' && contains(github.event.head_commit.message, '[apply-hardware-options]')
+      - name: Connect hardware catalogue to Supabase
+        if: github.event_name == 'push' && contains(github.event.head_commit.message, '[connect-hardware-supabase]')
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
 
           app = Path('src/App.tsx')
           s = app.read_text()
 
-          replacements = [
-            (
-              '  const [hwBrandIndex, setHwBrandIndex] = useState<number | null>(null);',
-              '  const [hwBrandIndex, setHwBrandIndex] = useState<number | null>(null);\n  const [selectedHwOptions, setSelectedHwOptions] = useState({ size: "", material: "", finish: "" });'
-            ),
-            (
-              '  const goHardwareHome = () => { setHwGroupId(null); setHwCategoryId(null); setHwBrandIndex(null); navigate("hardware"); };',
-              '  const goHardwareHome = () => { setHwGroupId(null); setHwCategoryId(null); setHwBrandIndex(null); setSelectedHwOptions({ size: "", material: "", finish: "" }); navigate("hardware"); };'
-            ),
-            (
-              '  const addHardwareToCart = (brand: HwBrandCard, groupName: string, categoryName: string) => {\n    const options = { Size: brand.sizes?.join(", ") || "Standard", Material: brand.materials?.join(", ") || "Standard", Finish: brand.finishes?.join(", ") || "Standard" };\n    const key = `hardware:${groupName}:${categoryName}:${brand.brand}`;\n    setCart(current => {\n      const existing = current.find(i => i.id === key);\n      return existing ? current.map(i => i.id === key ? { ...i, quantity: i.quantity + 1 } : i) : [...current, { id: key, name: brand.brand, description: `${categoryName} · ${groupName}`, price: HARDWARE_MRP, quantity: 1, image: brand.image, category: categoryName, kind: "hardware", options }];\n    });\n    notify(`${brand.brand} added to cart`);\n  };',
-              '  const addHardwareToCart = (brand: HwBrandCard, groupName: string, categoryName: string) => {\n    if (brand.stock <= 0) return notify("This hardware item is out of stock.");\n    if (brand.sizes?.length && !selectedHwOptions.size) return notify("Please select a size.");\n    if (brand.materials?.length && !selectedHwOptions.material) return notify("Please select a material.");\n    if (brand.finishes?.length && !selectedHwOptions.finish) return notify("Please select a finish.");\n    const options = { Size: selectedHwOptions.size || "Standard", Material: selectedHwOptions.material || "Standard", Finish: selectedHwOptions.finish || "Standard" };\n    const key = `hardware:${groupName}:${categoryName}:${brand.brand}:${JSON.stringify(options)}`;\n    setCart(current => {\n      const existing = current.find(i => i.id === key);\n      return existing ? current.map(i => i.id === key ? { ...i, quantity: Math.min(i.quantity + 1, brand.stock) } : i) : [...current, { id: key, name: brand.brand, description: `${categoryName} · ${groupName}`, price: HARDWARE_MRP, quantity: 1, image: brand.image, category: categoryName, kind: "hardware", options }];\n    });\n    notify(`${brand.brand} added to cart`);\n  };'
-            ),
-            (
-              'onClick={() => setHwBrandIndex(i)}',
-              'onClick={() => { setHwBrandIndex(i); setSelectedHwOptions({ size: "", material: "", finish: "" }); }}'
-            ),
-            (
-              '<div className="hw-chips">{hwBrand.sizes.map(s => <span className="hw-chip hw-chip-size" key={s}>{s}</span>)}</div>',
-              '<div className="hw-chips">{hwBrand.sizes.map(s => <button type="button" className={`hw-chip hw-chip-size hw-chip-option ${selectedHwOptions.size === s ? "selected" : ""}`} key={s} onClick={() => setSelectedHwOptions(o => ({ ...o, size: s }))}>{s}</button>)}</div>'
-            ),
-            (
-              '<div className="hw-chips">{hwBrand.materials.map(s => <span className="hw-chip hw-chip-material" key={s}>{s}</span>)}</div>',
-              '<div className="hw-chips">{hwBrand.materials.map(s => <button type="button" className={`hw-chip hw-chip-material hw-chip-option ${selectedHwOptions.material === s ? "selected" : ""}`} key={s} onClick={() => setSelectedHwOptions(o => ({ ...o, material: s }))}>{s}</button>)}</div>'
-            ),
-            (
-              '<div className="hw-chips">{hwBrand.finishes.map(s => <span className="hw-chip hw-chip-finish" key={s}>{s}</span>)}</div>',
-              '<div className="hw-chips">{hwBrand.finishes.map(s => <button type="button" className={`hw-chip hw-chip-finish hw-chip-option ${selectedHwOptions.finish === s ? "selected" : ""}`} key={s} onClick={() => setSelectedHwOptions(o => ({ ...o, finish: s }))}>{s}</button>)}</div>'
-            ),
-            (
-              '<div className="hw-price"><strong>MRP {money(HARDWARE_MRP)}</strong></div><button className="primary-btn" onClick={() => addHardwareToCart(hwBrand, hwGroup.name, hwCategory.name)}>Add to Cart</button>',
-              '<div className="hw-stock-status">{hwBrand.stock > 0 ? `In stock · ${hwBrand.stock} available` : "OUT OF STOCK"}</div><div className="hw-price"><strong>MRP {money(HARDWARE_MRP)}</strong></div><button className="primary-btn" disabled={hwBrand.stock <= 0} onClick={() => addHardwareToCart(hwBrand, hwGroup.name, hwCategory.name)}>{hwBrand.stock > 0 ? "Add to Cart" : "Out of Stock"}</button>'
-            )
-          ]
+          if 'from "./hardwareSupabase"' not in s:
+              s = s.replace(
+                  'import { HARDWARE_MRP, hardwareGroups, getBrandCards, HwBrandCard } from "./hardwareData";',
+                  'import { HARDWARE_MRP, hardwareGroups, getBrandCards, HwBrandCard } from "./hardwareData";\nimport { getHardwareVariantStock, HardwareVariantRecord, loadHardwareCatalogFromSupabase } from "./hardwareSupabase";'
+              )
 
-          for old, new in replacements:
-              if old not in s:
-                  raise SystemExit(f'Missing expected App.tsx marker: {old[:100]}')
-              s = s.replace(old, new, 1)
+          if 'const [hardwareCatalog, setHardwareCatalog]' not in s:
+              s = s.replace(
+                  '  const [selectedHwOptions, setSelectedHwOptions] = useState({ size: "", material: "", finish: "" });',
+                  '  const [selectedHwOptions, setSelectedHwOptions] = useState({ size: "", material: "", finish: "" });\n  const [hardwareCatalog, setHardwareCatalog] = useState(hardwareGroups);\n  const [hardwareVariants, setHardwareVariants] = useState<HardwareVariantRecord[]>([]);'
+              )
+
+          if 'const loadHardwareCatalog = async () =>' not in s:
+              marker = '  const loadProfile = async (currentUser: User | null) => {'
+              loader = '''  const loadHardwareCatalog = async () => {
+    const result = await loadHardwareCatalogFromSupabase();
+    if (result.groups?.length) {
+      setHardwareCatalog(result.groups);
+      setHardwareVariants(result.variants);
+    }
+  };
+
+'''
+              if marker not in s:
+                  raise SystemExit('Missing loadProfile marker')
+              s = s.replace(marker, loader + marker, 1)
+
+          s = s.replace(
+              '    loadProducts();\n    supabase.auth.getUser()',
+              '    loadProducts();\n    loadHardwareCatalog();\n    supabase.auth.getUser()',
+              1
+          )
+
+          s = s.replace('hardwareGroups.forEach', 'hardwareCatalog.forEach')
+          s = s.replace('[searchQuery]);', '[searchQuery, hardwareCatalog]);', 1)
+
+          if 'const selectedHardwareStock = (' not in s:
+              marker = '  const addHardwareToCart = (brand: HwBrandCard, groupName: string, categoryName: string) => {'
+              helper = '''  const selectedHardwareStock = (brand: HwBrandCard, groupName: string, categoryName: string) => {
+    const hasAllOptions = (!brand.sizes?.length || !!selectedHwOptions.size)
+      && (!brand.materials?.length || !!selectedHwOptions.material)
+      && (!brand.finishes?.length || !!selectedHwOptions.finish);
+    if (!hasAllOptions || hardwareVariants.length === 0) return brand.stock;
+    return getHardwareVariantStock(hardwareVariants, groupName, categoryName, brand.brand, {
+      size: selectedHwOptions.size || "Standard",
+      material: selectedHwOptions.material || "Standard",
+      finish: selectedHwOptions.finish || "Standard",
+    });
+  };
+
+'''
+              if marker not in s:
+                  raise SystemExit('Missing addHardwareToCart marker')
+              s = s.replace(marker, helper + marker, 1)
+
+          start = s.find('  const addHardwareToCart = (brand: HwBrandCard, groupName: string, categoryName: string) => {')
+          if start == -1:
+              raise SystemExit('Could not locate addHardwareToCart')
+          end = s.find('\n  const updateQty =', start)
+          if end == -1:
+              raise SystemExit('Could not locate updateQty')
+          new_fn = '''  const addHardwareToCart = (brand: HwBrandCard, groupName: string, categoryName: string) => {
+    if (brand.sizes?.length && !selectedHwOptions.size) return notify("Please select a size.");
+    if (brand.materials?.length && !selectedHwOptions.material) return notify("Please select a material.");
+    if (brand.finishes?.length && !selectedHwOptions.finish) return notify("Please select a finish.");
+    const options = { Size: selectedHwOptions.size || "Standard", Material: selectedHwOptions.material || "Standard", Finish: selectedHwOptions.finish || "Standard" };
+    const stock = selectedHardwareStock(brand, groupName, categoryName);
+    if (stock <= 0) return notify("This hardware item is out of stock.");
+    const key = `hardware:${groupName}:${categoryName}:${brand.brand}:${JSON.stringify(options)}`;
+    setCart(current => {
+      const existing = current.find(i => i.id === key);
+      return existing
+        ? current.map(i => i.id === key ? { ...i, quantity: Math.min(i.quantity + 1, stock), stock } : i)
+        : [...current, { id: key, name: brand.brand, description: `${categoryName} · ${groupName}`, price: HARDWARE_MRP, quantity: 1, image: brand.image, category: categoryName, kind: "hardware", options, stock }];
+    });
+    notify(`${brand.brand} added to cart`);
+  };'''
+          s = s[:start] + new_fn + s[end:]
+
+          # Hardware detail UI now reflects the selected variant's actual stock.
+          s = s.replace(
+              '{hwBrand.stock > 0 ? `In stock · ${hwBrand.stock} available` : "OUT OF STOCK"}',
+              '{selectedHardwareStock(hwBrand, hwGroup.name, hwCategory.name) > 0 ? `In stock · ${selectedHardwareStock(hwBrand, hwGroup.name, hwCategory.name)} available` : "OUT OF STOCK"}'
+          )
+          s = s.replace(
+              'disabled={hwBrand.stock <= 0}',
+              'disabled={selectedHardwareStock(hwBrand, hwGroup.name, hwCategory.name) <= 0}'
+          )
+          s = s.replace(
+              '{hwBrand.stock > 0 ? "Add to Cart" : "Out of Stock"}',
+              '{selectedHardwareStock(hwBrand, hwGroup.name, hwCategory.name) > 0 ? "Add to Cart" : "Out of Stock"}'
+          )
 
           app.write_text(s)
-
-          css = Path('src/App.css')
-          c = css.read_text()
-          addition = '''\n\n.hw-chip-option {\n  border: 1px solid transparent;\n  cursor: pointer;\n  font: inherit;\n}\n.hw-chip-option.selected {\n  outline: 2px solid #1d4f7a;\n  font-weight: 700;\n  transform: translateY(-1px);\n}\n.hw-stock-status {\n  margin: 12px 0;\n  font-weight: 700;\n  color: #26734d;\n}\n'''
-          if '.hw-chip-option.selected' not in c:
-              css.write_text(c + addition)
           PY
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/App.tsx src/App.css
-          git diff --cached --quiet || git commit -m "Fix selectable hardware options [bot-fix]"
+          git add src/App.tsx src/hardwareSupabase.ts
+          git diff --cached --quiet || git commit -m "Connect hardware catalogue to Supabase [bot-fix]"
           git push
       - run: npm ci
       - run: npm run build
