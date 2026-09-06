@@ -5,6 +5,7 @@ import glassProduct from "./assets/glass-product.jpg";
 import { HARDWARE_MRP, hardwareGroups, getBrandCards, HwBrandCard } from "./hardwareData";
 import { getHardwareVariantStock, HardwareVariantRecord, loadHardwareCatalogFromSupabase } from "./hardwareSupabase";
 import "./App.css";
+import AdminDashboard from "./AdminDashboard";
 
 // NOTE: This commit intentionally fixes the search focus issue without changing the existing app behavior.
 // The header previously defined inline JSX every render. React can treat recreated component functions as
@@ -188,9 +189,9 @@ function App() {
       const { data, error } = await supabase.auth.signUp({ email: authEmail, password: authPassword, options: { data: { name: authName, phone: authPhone, account_type: accountType } } });
       if (error) setAuthError(error.message);
       else if (data.user) {
-        const { error: profileError } = await supabase.from("profiles").upsert({ id: data.user.id, email: authEmail, role: accountType, points: 0 });
+        const { error: profileError } = await supabase.from("profiles").upsert({ id: data.user.id, email: authEmail, role: accountType === "admin" ? "customer" : accountType, points: 0 });
         if (profileError) setAuthError(`Account created, but profile setup needs attention: ${profileError.message}`);
-        else { notify("Account created. Check your email if verification is enabled."); setAuthMode("login"); setAuthPassword(""); setAuthConfirm(""); }
+        else { notify(accountType === "admin" ? "Account created. Admin access requires approval." : "Account created. Check your email if verification is enabled."); setAuthMode("login"); setAuthPassword(""); setAuthConfirm(""); }
       }
     } else {
       const { data, error } = await supabase.auth.signInWithPassword({ email: authEmail, password: authPassword });
@@ -281,7 +282,7 @@ function App() {
     {page === "contact" && <main className="page-container"><div className="page-title"><p className="eyebrow">CONTACT</p><h1>Let's build something beautiful.</h1><p>Reach Glassmart for hardware requirements, project enquiries and support.</p></div><div className="contact-grid"><div className="contact-card"><p className="eyebrow">PHONE</p><h2>+91 XXXXX XXXXX</h2><p>Call us for product and project support.</p></div><div className="contact-card"><p className="eyebrow">EMAIL</p><h2>hello@glassmart.in</h2><p>Send us your requirement and we will follow up.</p></div><div className="contact-card"><p className="eyebrow">LOCATION</p><h2>{selectedLocation}</h2><p>Use the delivery location selector in the header.</p></div></div></main>}
     {page === "login" && <main className="page-container login-page"><div className="login-box"><p className="eyebrow">GLASSMART ACCOUNT</p><h1>{authMode === "login" ? "Welcome back" : "Create your account"}</h1>{authMode === "register" && <><input value={authName} onChange={e => setAuthName(e.target.value)} placeholder="Full name" autoComplete="name"/><input value={authPhone} onChange={e => setAuthPhone(e.target.value)} placeholder="Phone number" autoComplete="tel"/><div className="account-type-grid">{([['customer', 'Customer'], ['carpenter', 'Carpenter'], ['interior', 'Interior'], ['engineer', 'Engineer'], ['architect', 'Architect'], ['admin', 'Admin']] as const).map(([value, label]) => <button key={value} type="button" className={`account-type ${accountType === value ? "active" : ""}`} onClick={() => setAccountType(value)}>{label}</button>)}</div></>}<form onSubmit={handleAuth}><input type="email" value={authEmail} onChange={e => setAuthEmail(e.target.value)} placeholder="Email address" autoComplete="email"/><input type="password" value={authPassword} onChange={e => setAuthPassword(e.target.value)} placeholder="Password" autoComplete={authMode === "login" ? "current-password" : "new-password"}/>{authMode === "register" && <input type="password" value={authConfirm} onChange={e => setAuthConfirm(e.target.value)} placeholder="Confirm password" autoComplete="new-password"/>}{authError && <p className="form-error">{authError}</p>}<button className="primary-btn full" disabled={authLoading}>{authLoading ? "Please wait..." : authMode === "login" ? "Sign in" : "Create account"}</button></form><p className="login-switch">{authMode === "login" ? "New to Glassmart?" : "Already have an account?"} <button type="button" onClick={() => { setAuthMode(authMode === "login" ? "register" : "login"); setAuthError(""); }}> {authMode === "login" ? "Create account" : "Sign in"}</button></p><p className="login-note">Your account is securely managed through Glassmart authentication.</p></div></main>}
     {page === "account" && <main className="page-container"><div className="account-panel"><p className="eyebrow">ACCOUNT</p><h1>{user ? String(user.user_metadata?.name || user.email || "Account") : "Account"}</h1><button className="primary-btn" onClick={logout}>Log out</button></div></main>}
-    {page === "admin" && <main className="page-container"><div className="admin-dashboard"><h1>Admin Dashboard</h1><div className="admin-grid"><button className="admin-card" onClick={() => navigate("admin-products")}><h2>Products</h2></button><button className="admin-card" onClick={() => navigate("admin-orders")}><h2>Orders</h2></button><button className="admin-card" onClick={() => navigate("admin-enquiries")}><h2>Enquiries</h2></button><button className="admin-card" onClick={() => navigate("admin-hardware")}><h2>Hardware</h2></button></div></div></main>}
+    {userRole === "admin" && page.startsWith("admin") && <AdminDashboard navigate={navigate} onLogout={logout} />}
     {toast && <div className="toast">{toast}</div>}
   </div>;
 }
