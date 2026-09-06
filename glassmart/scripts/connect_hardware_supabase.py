@@ -97,7 +97,6 @@ s = s.replace(
     '{selectedHardwareStock(hwBrand, hwGroup.name, hwCategory.name) > 0 ? "Add to Cart" : "Out of Stock"}',
 )
 
-# All hardware navigation/search/rendering should use the Supabase-backed state.
 s = s.replace('hardwareGroups.map', 'hardwareCatalog.map')
 s = s.replace('hardwareGroups.find', 'hardwareCatalog.find')
 
@@ -109,5 +108,17 @@ if broken_login in s:
 elif 'className="login-box"' not in s and '{page === "login"' in s:
     raise SystemExit("Login page exists but could not be safely restored")
 
+# Registration account types: Customer, Carpenter, Interior, Engineer, Architect, Admin.
+s = s.replace(
+    'const [accountType, setAccountType] = useState<"customer" | "carpenter">("customer");',
+    'const [accountType, setAccountType] = useState<"customer" | "carpenter" | "interior" | "engineer" | "architect" | "admin">("customer");'
+)
+old_account_buttons = '<div className="account-type-grid"><button type="button" className={`account-type ${accountType === "customer" ? "active" : ""}`} onClick={() => setAccountType("customer")}>Customer</button><button type="button" className={`account-type ${accountType === "carpenter" ? "active" : ""}`} onClick={() => setAccountType("carpenter")}>Carpenter</button></div>'
+new_account_buttons = '''<div className="account-type-grid">{([['customer', 'Customer'], ['carpenter', 'Carpenter'], ['interior', 'Interior'], ['engineer', 'Engineer'], ['architect', 'Architect'], ['admin', 'Admin']] as const).map(([value, label]) => <button key={value} type="button" className={`account-type ${accountType === value ? "active" : ""}`} onClick={() => setAccountType(value)}>{label}</button>)}</div>'''
+if old_account_buttons in s:
+    s = s.replace(old_account_buttons, new_account_buttons, 1)
+else:
+    raise SystemExit("Account type buttons not found")
+
 app.write_text(s)
-print("Hardware Supabase integration and login form applied")
+print("Hardware Supabase integration, login form, and all account types applied")
