@@ -1,6 +1,7 @@
 // Hardware fittings catalogue data
-// Transcribed from the supplier reference sheet. Do not invent brands,
-// sizes, materials or finishes here — only add what exists in the source.
+// Hardware prices are controlled centrally in the app for now.
+export const HARDWARE_MRP = 500;
+
 export type HwVariant = { brands: string[]; sizes: string[]; materials?: string[]; finishes?: string[]; image?: string; };
 export type HwCategory = { id: string; name: string; variants: HwVariant[]; };
 export type HwGroup = { id: string; name: string; categories: HwCategory[]; };
