@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: ["main"]
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -19,5 +22,67 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: glassmart/package-lock.json
+      - name: Apply hardware option selection fix
+        if: github.event_name == 'push' && contains(github.event.head_commit.message, '[apply-hardware-options]')
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          app = Path('src/App.tsx')
+          s = app.read_text()
+
+          replacements = [
+            (
+              '  const [hwBrandIndex, setHwBrandIndex] = useState<number | null>(null);',
+              '  const [hwBrandIndex, setHwBrandIndex] = useState<number | null>(null);\n  const [selectedHwOptions, setSelectedHwOptions] = useState({ size: "", material: "", finish: "" });'
+            ),
+            (
+              '  const goHardwareHome = () => { setHwGroupId(null); setHwCategoryId(null); setHwBrandIndex(null); navigate("hardware"); };',
+              '  const goHardwareHome = () => { setHwGroupId(null); setHwCategoryId(null); setHwBrandIndex(null); setSelectedHwOptions({ size: "", material: "", finish: "" }); navigate("hardware"); };'
+            ),
+            (
+              '  const addHardwareToCart = (brand: HwBrandCard, groupName: string, categoryName: string) => {\n    const options = { Size: brand.sizes?.join(", ") || "Standard", Material: brand.materials?.join(", ") || "Standard", Finish: brand.finishes?.join(", ") || "Standard" };\n    const key = `hardware:${groupName}:${categoryName}:${brand.brand}`;\n    setCart(current => {\n      const existing = current.find(i => i.id === key);\n      return existing ? current.map(i => i.id === key ? { ...i, quantity: i.quantity + 1 } : i) : [...current, { id: key, name: brand.brand, description: `${categoryName} · ${groupName}`, price: HARDWARE_MRP, quantity: 1, image: brand.image, category: categoryName, kind: "hardware", options }];\n    });\n    notify(`${brand.brand} added to cart`);\n  };',
+              '  const addHardwareToCart = (brand: HwBrandCard, groupName: string, categoryName: string) => {\n    if (brand.stock <= 0) return notify("This hardware item is out of stock.");\n    if (brand.sizes?.length && !selectedHwOptions.size) return notify("Please select a size.");\n    if (brand.materials?.length && !selectedHwOptions.material) return notify("Please select a material.");\n    if (brand.finishes?.length && !selectedHwOptions.finish) return notify("Please select a finish.");\n    const options = { Size: selectedHwOptions.size || "Standard", Material: selectedHwOptions.material || "Standard", Finish: selectedHwOptions.finish || "Standard" };\n    const key = `hardware:${groupName}:${categoryName}:${brand.brand}:${JSON.stringify(options)}`;\n    setCart(current => {\n      const existing = current.find(i => i.id === key);\n      return existing ? current.map(i => i.id === key ? { ...i, quantity: Math.min(i.quantity + 1, brand.stock) } : i) : [...current, { id: key, name: brand.brand, description: `${categoryName} · ${groupName}`, price: HARDWARE_MRP, quantity: 1, image: brand.image, category: categoryName, kind: "hardware", options }];\n    });\n    notify(`${brand.brand} added to cart`);\n  };'
+            ),
+            (
+              'onClick={() => setHwBrandIndex(i)}',
+              'onClick={() => { setHwBrandIndex(i); setSelectedHwOptions({ size: "", material: "", finish: "" }); }}'
+            ),
+            (
+              '<div className="hw-chips">{hwBrand.sizes.map(s => <span className="hw-chip hw-chip-size" key={s}>{s}</span>)}</div>',
+              '<div className="hw-chips">{hwBrand.sizes.map(s => <button type="button" className={`hw-chip hw-chip-size hw-chip-option ${selectedHwOptions.size === s ? "selected" : ""}`} key={s} onClick={() => setSelectedHwOptions(o => ({ ...o, size: s }))}>{s}</button>)}</div>'
+            ),
+            (
+              '<div className="hw-chips">{hwBrand.materials.map(s => <span className="hw-chip hw-chip-material" key={s}>{s}</span>)}</div>',
+              '<div className="hw-chips">{hwBrand.materials.map(s => <button type="button" className={`hw-chip hw-chip-material hw-chip-option ${selectedHwOptions.material === s ? "selected" : ""}`} key={s} onClick={() => setSelectedHwOptions(o => ({ ...o, material: s }))}>{s}</button>)}</div>'
+            ),
+            (
+              '<div className="hw-chips">{hwBrand.finishes.map(s => <span className="hw-chip hw-chip-finish" key={s}>{s}</span>)}</div>',
+              '<div className="hw-chips">{hwBrand.finishes.map(s => <button type="button" className={`hw-chip hw-chip-finish hw-chip-option ${selectedHwOptions.finish === s ? "selected" : ""}`} key={s} onClick={() => setSelectedHwOptions(o => ({ ...o, finish: s }))}>{s}</button>)}</div>'
+            ),
+            (
+              '<div className="hw-price"><strong>MRP {money(HARDWARE_MRP)}</strong></div><button className="primary-btn" onClick={() => addHardwareToCart(hwBrand, hwGroup.name, hwCategory.name)}>Add to Cart</button>',
+              '<div className="hw-stock-status">{hwBrand.stock > 0 ? `In stock · ${hwBrand.stock} available` : "OUT OF STOCK"}</div><div className="hw-price"><strong>MRP {money(HARDWARE_MRP)}</strong></div><button className="primary-btn" disabled={hwBrand.stock <= 0} onClick={() => addHardwareToCart(hwBrand, hwGroup.name, hwCategory.name)}>{hwBrand.stock > 0 ? "Add to Cart" : "Out of Stock"}</button>'
+            )
+          ]
+
+          for old, new in replacements:
+              if old not in s:
+                  raise SystemExit(f'Missing expected App.tsx marker: {old[:100]}')
+              s = s.replace(old, new, 1)
+
+          app.write_text(s)
+
+          css = Path('src/App.css')
+          c = css.read_text()
+          addition = '''\n\n.hw-chip-option {\n  border: 1px solid transparent;\n  cursor: pointer;\n  font: inherit;\n}\n.hw-chip-option.selected {\n  outline: 2px solid #1d4f7a;\n  font-weight: 700;\n  transform: translateY(-1px);\n}\n.hw-stock-status {\n  margin: 12px 0;\n  font-weight: 700;\n  color: #26734d;\n}\n.hw-stock-status:has(+ .hw-price) {\n  display: block;\n}\n'''
+          if '.hw-chip-option.selected' not in c:
+              css.write_text(c + addition)
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/App.tsx src/App.css
+          git diff --cached --quiet || git commit -m "Fix selectable hardware options [bot-fix]"
+          git push
       - run: npm ci
       - run: npm run build
