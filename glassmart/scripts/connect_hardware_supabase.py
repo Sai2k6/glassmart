@@ -101,5 +101,13 @@ s = s.replace(
 s = s.replace('hardwareGroups.map', 'hardwareCatalog.map')
 s = s.replace('hardwareGroups.find', 'hardwareCatalog.find')
 
+# Restore the full login/register form if a previous patch reduced it to only the heading.
+broken_login = '''{page === "login" && <main className="page-container auth-page"><div className="auth-card"><p className="eyebrow">GLASSMART ACCOUNT</p><h1>{authMode === "login" ? "Welcome back" : "Create your account"}</h1></div></main>}'''
+full_login = '''{page === "login" && <main className="page-container login-page"><div className="login-box"><p className="eyebrow">GLASSMART ACCOUNT</p><h1>{authMode === "login" ? "Welcome back" : "Create your account"}</h1>{authMode === "register" && <><input value={authName} onChange={e => setAuthName(e.target.value)} placeholder="Full name" autoComplete="name"/><input value={authPhone} onChange={e => setAuthPhone(e.target.value)} placeholder="Phone number" autoComplete="tel"/><div className="account-type-grid"><button type="button" className={`account-type ${accountType === "customer" ? "active" : ""}`} onClick={() => setAccountType("customer")}>Customer</button><button type="button" className={`account-type ${accountType === "carpenter" ? "active" : ""}`} onClick={() => setAccountType("carpenter")}>Carpenter</button></div></>}<form onSubmit={handleAuth}><input type="email" value={authEmail} onChange={e => setAuthEmail(e.target.value)} placeholder="Email address" autoComplete="email"/><input type="password" value={authPassword} onChange={e => setAuthPassword(e.target.value)} placeholder="Password" autoComplete={authMode === "login" ? "current-password" : "new-password"}/>{authMode === "register" && <input type="password" value={authConfirm} onChange={e => setAuthConfirm(e.target.value)} placeholder="Confirm password" autoComplete="new-password"/>}{authError && <p className="form-error">{authError}</p>}<button className="primary-btn full" disabled={authLoading}>{authLoading ? "Please wait..." : authMode === "login" ? "Sign in" : "Create account"}</button></form><p className="login-switch">{authMode === "login" ? "New to Glassmart?" : "Already have an account?"} <button type="button" onClick={() => { setAuthMode(authMode === "login" ? "register" : "login"); setAuthError(""); }}> {authMode === "login" ? "Create account" : "Sign in"}</button></p><p className="login-note">Your account is securely managed through Glassmart authentication.</p></div></main>}'''
+if broken_login in s:
+    s = s.replace(broken_login, full_login, 1)
+elif 'className="login-box"' not in s and '{page === "login"' in s:
+    raise SystemExit("Login page exists but could not be safely restored")
+
 app.write_text(s)
-print("Hardware Supabase integration applied")
+print("Hardware Supabase integration and login form applied")
