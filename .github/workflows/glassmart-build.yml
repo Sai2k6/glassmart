@@ -75,7 +75,7 @@ jobs:
 
           css = Path('src/App.css')
           c = css.read_text()
-          addition = '''\n\n.hw-chip-option {\n  border: 1px solid transparent;\n  cursor: pointer;\n  font: inherit;\n}\n.hw-chip-option.selected {\n  outline: 2px solid #1d4f7a;\n  font-weight: 700;\n  transform: translateY(-1px);\n}\n.hw-stock-status {\n  margin: 12px 0;\n  font-weight: 700;\n  color: #26734d;\n}\n.hw-stock-status:has(+ .hw-price) {\n  display: block;\n}\n'''
+          addition = '''\n\n.hw-chip-option {\n  border: 1px solid transparent;\n  cursor: pointer;\n  font: inherit;\n}\n.hw-chip-option.selected {\n  outline: 2px solid #1d4f7a;\n  font-weight: 700;\n  transform: translateY(-1px);\n}\n.hw-stock-status {\n  margin: 12px 0;\n  font-weight: 700;\n  color: #26734d;\n}\n'''
           if '.hw-chip-option.selected' not in c:
               css.write_text(c + addition)
           PY
