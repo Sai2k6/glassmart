@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "./lib/supabaseClient";
 import glassProduct from './assets/glass-product.jpg'
+import { hardwareGroups, getBrandCards } from "./hardwareData";
 import './App.css'
 
 type Product = {
@@ -38,6 +39,9 @@ function App() {
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [cartQuantity, setCartQuantity] = useState(0);
   const [, setCart] = useState<any[]>([]);
+  const [hwGroupId, setHwGroupId] = useState<string | null>(null);
+  const [hwCategoryId, setHwCategoryId] = useState<string | null>(null);
+  const [hwBrandIndex, setHwBrandIndex] = useState<number | null>(null);
   const [newProduct, setNewProduct] = useState({
     name: "",
     description: "",
@@ -208,6 +212,11 @@ function App() {
   };
   
 
+  const hwGroup = hardwareGroups.find((g) => g.id === hwGroupId) || null;
+  const hwCategory = hwGroup?.categories.find((c) => c.id === hwCategoryId) || null;
+  const hwBrandCards = hwCategory ? getBrandCards(hwCategory) : [];
+  const hwBrand = hwBrandIndex !== null ? hwBrandCards[hwBrandIndex] : null;
+
   const cartTotal = cartQuantity * product.price;
 
   const increaseCartQuantity = () => {
@@ -362,6 +371,18 @@ function App() {
           </button>
 
           <button
+            className={`nav-button ${page === "hardware" ? "active" : ""}`}
+            onClick={() => {
+              setPage("hardware");
+              setHwGroupId(null);
+              setHwCategoryId(null);
+              setHwBrandIndex(null);
+            }}
+          >
+            Hardware Fittings
+          </button>
+
+          <button
             className={`nav-button ${page === "contact" ? "active" : ""}`}
             onClick={() => setPage("contact")}
           >
@@ -501,6 +522,153 @@ function App() {
           </section>
         </main>
       )}
+      {/* HARDWARE FITTINGS */}
+      {page === "hardware" && (
+        <main className="page-container hw-page">
+          <div className="hw-heading">
+            <p className="hw-eyebrow">HARDWARE FITTINGS CATALOGUE</p>
+            <h1>Hardware fittings catalog</h1>
+            <p className="hw-count">12 categories · 5 groups</p>
+          </div>
+
+          {/* LEVEL 1: GROUPS */}
+          {!hwGroup && (
+            <div className="hw-grid hw-grid-groups">
+              {hardwareGroups.map((group) => (
+                <button
+                  key={group.id}
+                  className="hw-card hw-group-card"
+                  onClick={() => setHwGroupId(group.id)}
+                >
+                  <span className="hw-card-name">{group.name}</span>
+                  <span className="hw-card-meta">
+                    {group.categories.length}{" "}
+                    {group.categories.length === 1 ? "category" : "categories"}
+                  </span>
+                  <span className="hw-card-arrow">→</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* LEVEL 2: CATEGORIES */}
+          {hwGroup && !hwCategory && (
+            <div className="hw-level">
+              <button
+                className="hw-back-btn"
+                onClick={() => setHwGroupId(null)}
+              >
+                ← Back
+              </button>
+
+              <div className="hw-crumb">{hwGroup.name}</div>
+
+              <div className="hw-grid hw-grid-categories">
+                {hwGroup.categories.map((category) => (
+                  <button
+                    key={category.id}
+                    className="hw-card hw-category-card"
+                    onClick={() => setHwCategoryId(category.id)}
+                  >
+                    <span className="hw-card-name">{category.name}</span>
+                    <span className="hw-card-arrow">→</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* LEVEL 3: BRANDS */}
+          {hwGroup && hwCategory && !hwBrand && (
+            <div className="hw-level">
+              <button
+                className="hw-back-btn"
+                onClick={() => setHwCategoryId(null)}
+              >
+                ← Back
+              </button>
+
+              <div className="hw-crumb">
+                {hwGroup.name} <span>/</span> {hwCategory.name}
+              </div>
+
+              <div className="hw-grid hw-grid-brands">
+                {hwBrandCards.map((card, index) => (
+                  <button
+                    key={`${card.brand}-${index}`}
+                    className="hw-card hw-brand-card"
+                    onClick={() => setHwBrandIndex(index)}
+                  >
+                    <span className="hw-card-name">{card.brand}</span>
+                    <span className="hw-card-arrow">→</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* LEVEL 4: BRAND DETAILS */}
+          {hwGroup && hwCategory && hwBrand && (
+            <div className="hw-level">
+              <button
+                className="hw-back-btn"
+                onClick={() => setHwBrandIndex(null)}
+              >
+                ← Back
+              </button>
+
+              <div className="hw-crumb">
+                {hwGroup.name} <span>/</span> {hwCategory.name}{" "}
+                <span>/</span> {hwBrand.brand}
+              </div>
+
+              <div className="hw-detail-card">
+                <h2>{hwBrand.brand}</h2>
+
+                {hwBrand.sizes.length > 0 && (
+                  <div className="hw-detail-section">
+                    <p className="hw-detail-label">Available sizes</p>
+                    <div className="hw-chips">
+                      {hwBrand.sizes.map((size) => (
+                        <span key={size} className="hw-chip hw-chip-size">
+                          {size}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {hwBrand.materials && hwBrand.materials.length > 0 && (
+                  <div className="hw-detail-section">
+                    <p className="hw-detail-label">Material type</p>
+                    <div className="hw-chips">
+                      {hwBrand.materials.map((material) => (
+                        <span key={material} className="hw-chip hw-chip-material">
+                          {material}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {hwBrand.finishes && hwBrand.finishes.length > 0 && (
+                  <div className="hw-detail-section">
+                    <p className="hw-detail-label">Finish</p>
+                    <div className="hw-chips">
+                      {hwBrand.finishes.map((finish) => (
+                        <span key={finish} className="hw-chip hw-chip-finish">
+                          {finish}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </main>
+      )}
+
       {/* Admin page*/}
 
       {page === "admin" && userRole === "admin" && (
