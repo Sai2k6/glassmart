@@ -32,3 +32,16 @@
 .admin-modal{position:fixed;inset:0;background:rgba(12,27,42,.48);display:grid;place-items:center;padding:20px;z-index:100}.admin-modal-card{background:#fff;border-radius:14px;padding:22px;width:min(560px,100%);max-height:90vh;overflow:auto;display:grid;gap:13px}.admin-modal-card .admin-panel-head{margin-bottom:4px}.admin-modal-card .admin-panel-head button{font-size:24px;color:#1e1e1c}.check-label{display:flex!important;grid-template-columns:auto 1fr;align-items:center;gap:8px!important}.check-label input{width:auto}
 @media(max-width:1050px){.admin-shell{grid-template-columns:190px 1fr}.admin-stat-grid{grid-template-columns:repeat(2,1fr)}.admin-two-col{grid-template-columns:1fr}.admin-form-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:700px){.admin-shell{display:block}.admin-sidebar{position:relative;height:auto;min-height:0}.admin-sidebar nav{display:flex;overflow:auto}.admin-sidebar nav button{white-space:nowrap}.admin-content{padding:18px}.admin-topbar{align-items:flex-start;flex-direction:column}.admin-top-actions{width:100%}.admin-stat-grid{grid-template-columns:1fr 1fr}.admin-form-grid{grid-template-columns:1fr}.admin-list-row{grid-template-columns:1fr auto}.admin-list-row select{grid-column:1/-1}.admin-record-head{flex-direction:column}}
+
+
+/* Glassmart services page repair */
+.page-container:has(.services-intro){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:stretch;}
+.page-container:has(.services-intro) .services-intro{grid-column:1/-1;margin:0 0 8px;}
+.page-container:has(.services-intro) .services-intro h1{font-size:48px;line-height:1.08;margin:6px 0 12px;}
+.page-container:has(.services-intro) .services-intro p{font-size:18px;line-height:1.55;margin:0;color:#617287;}
+.page-container:has(.services-intro) .service-layout{display:contents;}
+.page-container:has(.services-intro) .service-info{background:#fff;border:1px solid var(--line);border-radius:12px;padding:26px;min-height:170px;box-shadow:0 3px 12px #142d460b;}
+.page-container:has(.services-intro) .service-info h2{font-size:26px;color:var(--navy);margin:0 0 8px;}
+.page-container:has(.services-intro) .service-info p{font-size:15px;line-height:1.55;color:#617287;margin:0;}
+.page-container:has(.services-intro) .primary-btn{grid-column:1/-1;justify-self:start;margin-top:2px;}
+@media(max-width:760px){.page-container:has(.services-intro){grid-template-columns:1fr;}.page-container:has(.services-intro) .services-intro{grid-column:auto;}.page-container:has(.services-intro) .primary-btn{grid-column:auto;width:100%;}}
