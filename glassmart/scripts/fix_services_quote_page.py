@@ -8,13 +8,16 @@ css_path = root / "src" / "App.css"
 app = app_path.read_text(encoding="utf-8")
 
 start_marker = 'page === "services" ?'
-end_marker = ': page === "contact" ?'
 start = app.find(start_marker)
 if start == -1:
     raise SystemExit("services page marker not found")
-end = app.find(end_marker, start)
-if end == -1:
-    raise SystemExit("contact page marker not found after services page")
+
+# The earlier repair script can reformat the ternary, so do not depend on
+# one exact contact-page string. Find the next contact branch structurally.
+contact_match = re.search(r':?\s*page\s*===\s*["\']contact["\']\s*\?', app[start:])
+if not contact_match:
+    raise SystemExit("contact page branch not found after services page")
+end = start + contact_match.start()
 
 new_services = '''page === "services" ? (
         <div className="services-quote-page">
@@ -98,6 +101,5 @@ if marker not in css:
 .services-quote-submit .primary-btn:hover{background:#c92624}
 .services-quote-message{grid-column:1/-1;margin-top:-8px}
 @media(max-width:900px){.services-quote-card{grid-template-columns:1fr;gap:40px;padding:45px}.services-quote-copy h2{font-size:46px}}
-@media(max-width:680px){.services-quote-page{padding:32px 18px 60px}.services-quote-intro{margin-bottom:40px}.services-quote-intro h1{font-size:42px}.services-quote-intro>p:last-child{font-size:18px}.services-quote-card{padding:30px 22px;border-radius:12px}.services-quote-copy h2{font-size:38px}.services-quote-copy>p:last-child{font-size:18px}.services-quote-form{grid-template-columns:1fr;row-gap:22px}.services-quote-requirements,.services-quote-submit,.services-quote-message{grid-column:auto}.services-quote-submit .primary-btn{width:100%}}
-'''
+@media(max-width:680px){.services-quote-page{padding:32px 18px 60px}.services-quote-intro{margin-bottom:40px}.services-quote-intro h1{font-size:42px}.services-quote-intro>p:last-child{font-size:18px}.services-quote-card{padding:30px 22px;border-radius:12px}.services-quote-copy h2{font-size:38px}.services-quote-copy>p:last-child{font-size:18px}.services-quote-form{grid-template-columns:1fr;row-gap:22px}.services-quote-requirements,.services-quote-submit,.services-quote-message{grid-column:auto}.services-quote-submit .primary-btn{width:100%}}\n'''
     css_path.write_text(css, encoding="utf-8")
