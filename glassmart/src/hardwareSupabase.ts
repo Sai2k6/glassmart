@@ -29,14 +29,21 @@ export async function loadHardwareCatalogFromSupabase(): Promise<{
   if (productsError) return { groups: null, variants: [], error: productsError.message };
   if (!products?.length) return { groups: null, variants: [], error: "No hardware products found in Supabase." };
 
-  const { data: variants, error: variantsError } = await supabase
-    .from("hardware_variants")
-    .select("id, hardware_product_id, size, material, finish, stock, active")
-    .eq("active", true);
+  const rows: Array<{ id: string; hardware_product_id: string; size: string; material: string; finish: string; stock: number; active: boolean }> = [];
+  const pageSize = 500;
 
-  if (variantsError) return { groups: null, variants: [], error: variantsError.message };
+  for (let from = 0; ; from += pageSize) {
+    const { data: page, error: variantsError } = await supabase
+      .from("hardware_variants")
+      .select("id, hardware_product_id, size, material, finish, stock, active")
+      .eq("active", true)
+      .range(from, from + pageSize - 1);
 
-  const rows = variants || [];
+    if (variantsError) return { groups: null, variants: [], error: variantsError.message };
+    rows.push(...(page || []));
+    if (!page || page.length < pageSize) break;
+  }
+
   const records: HardwareVariantRecord[] = [];
   const groups = new Map<string, Map<string, HwGroup["categories"][number]>>();
 
