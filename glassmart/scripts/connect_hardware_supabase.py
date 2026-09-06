@@ -117,7 +117,7 @@ old_account_buttons = '<div className="account-type-grid"><button type="button" 
 new_account_buttons = '''<div className="account-type-grid">{([['customer', 'Customer'], ['carpenter', 'Carpenter'], ['interior', 'Interior'], ['engineer', 'Engineer'], ['architect', 'Architect'], ['admin', 'Admin']] as const).map(([value, label]) => <button key={value} type="button" className={`account-type ${accountType === value ? "active" : ""}`} onClick={() => setAccountType(value)}>{label}</button>)}</div>'''
 if old_account_buttons in s:
     s = s.replace(old_account_buttons, new_account_buttons, 1)
-else:
+elif "['customer', 'Customer']" not in s:
     raise SystemExit("Account type buttons not found")
 
 app.write_text(s)
