@@ -26,12 +26,14 @@ jobs:
         run: python scripts/connect_hardware_supabase.py
       - name: Apply admin control centre
         run: python scripts/apply_admin_dashboard.py
+      - name: Repair services page layout
+        run: python scripts/fix_services_page.py
       - name: Commit generated app integration
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/App.tsx src/App.css src/AdminDashboard.tsx src/hardwareSupabase.ts scripts/connect_hardware_supabase.py scripts/apply_admin_dashboard.py
-          git diff --cached --quiet || git commit -m "Wire admin control centre [bot-fix]"
+          git add src/App.tsx src/App.css src/AdminDashboard.tsx src/hardwareSupabase.ts scripts/connect_hardware_supabase.py scripts/apply_admin_dashboard.py scripts/fix_services_page.py
+          git diff --cached --quiet || git commit -m "Fix services page layout [bot-fix]"
           git push
       - run: npm ci
       - run: npm run build
