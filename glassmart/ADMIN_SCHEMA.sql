@@ -16,25 +16,44 @@ create table if not exists public.quotations (
   updated_at timestamptz default now()
 );
 
+-- Use a security-definer helper so the admin check does not recursively query
+-- public.profiles from a policy attached to public.profiles itself.
+create or replace function public.is_glassmart_admin()
+returns boolean
+language sql
+security definer
+set search_path = ''
+stable
+as $$
+  select exists (
+    select 1
+    from public.profiles p
+    where p.id = (select auth.uid())
+      and p.role = 'admin'
+  );
+$$;
+
+revoke execute on function public.is_glassmart_admin() from public;
+grant execute on function public.is_glassmart_admin() to authenticated;
+
 alter table public.quotations enable row level security;
 
 drop policy if exists "Admins can manage quotations" on public.quotations;
 create policy "Admins can manage quotations"
 on public.quotations for all
 to authenticated
-using (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin'))
-with check (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin'));
+using ((select public.is_glassmart_admin()))
+with check ((select public.is_glassmart_admin()));
 
 -- Admins need full management access to the business tables shown in the dashboard.
 -- These policies do not grant access to normal users.
-
 do $$
 declare
   t text;
 begin
   foreach t in array array['orders','enquiries','products','hardware_products','hardware_variants','profiles'] loop
     execute format('drop policy if exists %I on public.%I', 'Admins can manage ' || t, t);
-    execute format('create policy %I on public.%I for all to authenticated using (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = ''admin'')) with check (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = ''admin''))', 'Admins can manage ' || t, t);
+    execute format('create policy %I on public.%I for all to authenticated using ((select public.is_glassmart_admin())) with check ((select public.is_glassmart_admin()))', 'Admins can manage ' || t, t);
   end loop;
 end $$;
 
@@ -54,5 +73,6 @@ create trigger quotations_updated_at
 before update on public.quotations
 for each row execute function public.set_quotation_updated_at();
 
--- IMPORTANT: do not make public registration capable of assigning admin privileges.
--- The app should only create an admin role after an existing admin approves/changes it.
+-- IMPORTANT: public registration must never self-assign admin privileges.
+-- The app keeps the Admin option visible but creates such signups as customer
+-- until an existing administrator explicitly promotes the profile.
