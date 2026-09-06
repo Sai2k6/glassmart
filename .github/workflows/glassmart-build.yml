@@ -111,7 +111,6 @@ jobs:
   };'''
           s = s[:start] + new_fn + s[end:]
 
-          # Hardware detail UI now reflects the selected variant's actual stock.
           s = s.replace(
               '{hwBrand.stock > 0 ? `In stock · ${hwBrand.stock} available` : "OUT OF STOCK"}',
               '{selectedHardwareStock(hwBrand, hwGroup.name, hwCategory.name) > 0 ? `In stock · ${selectedHardwareStock(hwBrand, hwGroup.name, hwCategory.name)} available` : "OUT OF STOCK"}'
