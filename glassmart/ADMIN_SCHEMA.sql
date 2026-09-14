@@ -16,8 +16,6 @@ create table if not exists public.quotations (
   updated_at timestamptz default now()
 );
 
--- Use a security-definer helper so the admin check does not recursively query
--- public.profiles from a policy attached to public.profiles itself.
 create or replace function public.is_glassmart_admin()
 returns boolean
 language sql
@@ -26,10 +24,8 @@ set search_path = ''
 stable
 as $$
   select exists (
-    select 1
-    from public.profiles p
-    where p.id = (select auth.uid())
-      and p.role = 'admin'
+    select 1 from public.profiles p
+    where p.id = (select auth.uid()) and p.role = 'admin'
   );
 $$;
 
@@ -37,19 +33,13 @@ revoke execute on function public.is_glassmart_admin() from public;
 grant execute on function public.is_glassmart_admin() to authenticated;
 
 alter table public.quotations enable row level security;
-
 drop policy if exists "Admins can manage quotations" on public.quotations;
-create policy "Admins can manage quotations"
-on public.quotations for all
-to authenticated
+create policy "Admins can manage quotations" on public.quotations for all to authenticated
 using ((select public.is_glassmart_admin()))
 with check ((select public.is_glassmart_admin()));
 
--- Admins need full management access to the business tables shown in the dashboard.
--- These policies do not grant access to normal users.
 do $$
-declare
-  t text;
+declare t text;
 begin
   foreach t in array array['orders','enquiries','products','hardware_products','hardware_variants','profiles'] loop
     execute format('drop policy if exists %I on public.%I', 'Admins can manage ' || t, t);
@@ -57,22 +47,38 @@ begin
   end loop;
 end $$;
 
--- Keep timestamps current for quotations.
 create or replace function public.set_quotation_updated_at()
-returns trigger
-language plpgsql
-as $$
-begin
-  new.updated_at = now();
-  return new;
-end;
+returns trigger language plpgsql as $$
+begin new.updated_at = now(); return new; end;
 $$;
-
 drop trigger if exists quotations_updated_at on public.quotations;
-create trigger quotations_updated_at
-before update on public.quotations
+create trigger quotations_updated_at before update on public.quotations
 for each row execute function public.set_quotation_updated_at();
 
+-- Catalogue image storage used by the Admin Dashboard upload button.
+insert into storage.buckets (id, name, public)
+values ('glassmart-images', 'glassmart-images', true)
+on conflict (id) do update set public = true;
+
+drop policy if exists "Public can view Glassmart images" on storage.objects;
+create policy "Public can view Glassmart images"
+on storage.objects for select to public
+using (bucket_id = 'glassmart-images');
+
+drop policy if exists "Admins can upload Glassmart images" on storage.objects;
+create policy "Admins can upload Glassmart images"
+on storage.objects for insert to authenticated
+with check (bucket_id = 'glassmart-images' and (select public.is_glassmart_admin()));
+
+drop policy if exists "Admins can update Glassmart images" on storage.objects;
+create policy "Admins can update Glassmart images"
+on storage.objects for update to authenticated
+using (bucket_id = 'glassmart-images' and (select public.is_glassmart_admin()))
+with check (bucket_id = 'glassmart-images' and (select public.is_glassmart_admin()));
+
+drop policy if exists "Admins can delete Glassmart images" on storage.objects;
+create policy "Admins can delete Glassmart images"
+on storage.objects for delete to authenticated
+using (bucket_id = 'glassmart-images' and (select public.is_glassmart_admin()));
+
 -- IMPORTANT: public registration must never self-assign admin privileges.
--- The app keeps the Admin option visible but creates such signups as customer
--- until an existing administrator explicitly promotes the profile.
