@@ -311,7 +311,7 @@ function App() {
             </form>
           </div>
         </div>
-      )  page === "contact" ? "active" : ""}`} onClick={() => navigate("contact")}>Contact</button></div></nav>}
+      ) : page === "contact" ?  page === "contact" ? "active" : ""}`} onClick={() => navigate("contact")}>Contact</button></div></nav>}
     {showCategories && <div className="category-menu"><button onClick={() => { setShowCategories(false); goHardwareHome(); }}>Hardware Fittings</button><button onClick={() => { setShowCategories(false); navigate("services"); }}>Services</button><button onClick={() => { setShowCategories(false); navigate("contact"); }}>Contact</button></div>}
   </>;
 
