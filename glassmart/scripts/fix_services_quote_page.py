@@ -12,13 +12,13 @@ start = app.find(start_marker)
 if start == -1:
     raise SystemExit("services page marker not found")
 
-# The earlier repair script can reformat the ternary, so do not depend on
-# one exact contact-page string. Find the next contact branch structurally.
+# Find the next contact branch and replace only the services expression.
 contact_match = re.search(r':?\s*page\s*===\s*["\']contact["\']\s*\?', app[start:])
 if not contact_match:
     raise SystemExit("contact page branch not found after services page")
 end = start + contact_match.start()
 
+# Always leave the ternary separator ready for the following contact branch.
 new_services = '''page === "services" ? (
         <div className="services-quote-page">
           <div className="services-quote-intro">
@@ -70,7 +70,7 @@ new_services = '''page === "services" ? (
             </form>
           </div>
         </div>
-      ) '''
+      ) : page === "contact" ?'''
 
 app = app[:start] + new_services + app[end:]
 app_path.write_text(app, encoding="utf-8")
