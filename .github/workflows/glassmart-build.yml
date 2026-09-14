@@ -33,13 +33,15 @@ jobs:
       - name: Finalize storefront layout
         run: python scripts/finalize_storefront.py
       - name: Enable admin image uploads
-        run: python scripts/add_admin_image_upload.py
+        run: python scripts/enable_admin_image_uploads.py
+      - name: Repair generated syntax
+        run: python scripts/repair_generated_syntax.py
       - name: Commit generated app integration
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/App.tsx src/App.css src/AdminDashboard.tsx src/hardwareSupabase.ts scripts/connect_hardware_supabase.py scripts/apply_admin_dashboard.py scripts/fix_services_page.py scripts/fix_services_quote_page.py scripts/finalize_storefront.py scripts/add_admin_image_upload.py
-          git diff --cached --quiet || git commit -m "Finalize Glassmart storefront and admin catalogue [bot-fix]"
+          git add src/App.tsx src/App.css src/AdminDashboard.tsx src/hardwareSupabase.ts scripts/connect_hardware_supabase.py scripts/apply_admin_dashboard.py scripts/fix_services_page.py scripts/fix_services_quote_page.py scripts/finalize_storefront.py scripts/enable_admin_image_uploads.py scripts/repair_generated_syntax.py
+          git diff --cached --quiet || git commit -m "Repair generated storefront syntax [bot-fix]"
           git push
       - run: npm ci
       - run: npm run build
