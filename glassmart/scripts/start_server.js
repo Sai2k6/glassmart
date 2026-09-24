@@ -1,4 +1,4 @@
-import { createServer } from 'vite';
+import { createServer } from '../node_modules/vite/dist/node/index.js';
 
 async function main() {
   const server = await createServer({
@@ -9,7 +9,7 @@ async function main() {
     }
   });
   await server.listen();
-  console.log("GLASSMART VITE SERVER READY AT http://localhost:5173/");
+  console.log("GLASSMART VITE SERVER ACTIVE AT http://localhost:5173/");
   server.printUrls();
 }
 
